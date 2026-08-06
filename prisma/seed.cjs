@@ -1,0 +1,258 @@
+const { PrismaClient } = require('@prisma/client')
+const bcrypt = require('bcryptjs')
+
+const prisma = new PrismaClient()
+
+async function main() {
+  console.log('Sembrando base de datos...')
+
+  // Users
+  const adminPass = await bcrypt.hash('admin123', 10)
+  const vendedorPass = await bcrypt.hash('vendedor123', 10)
+
+  const admin = await prisma.user.upsert({
+    where: { username: 'admin' },
+    update: {},
+    create: { username: 'admin', password: adminPass, nombre: 'Administrador', rol: 'admin' },
+  })
+
+  const vendedor = await prisma.user.upsert({
+    where: { username: 'vendedor' },
+    update: {},
+    create: { username: 'vendedor', password: vendedorPass, nombre: 'Juan Vendedor', rol: 'vendedor' },
+  })
+
+  console.log('Usuarios creados:', admin.username, vendedor.username)
+
+  // Categories
+  const categories = [
+    'Pantalones', 'Camisas', 'Chaquetas', 'Vestidos', 'Faldas', 'Sudaderas', 'Accesorios', 'Shorts'
+  ]
+
+  const catMap = {}
+  for (const name of categories) {
+    const cat = await prisma.category.upsert({
+      where: { name },
+      update: {},
+      create: { name },
+    })
+    catMap[name] = cat.id
+  }
+
+  // Products
+  const products = [
+    { name: 'Jeans Clásicos', sku: 'JEAN-001', price: 89900, cost: 42000, stock: 45, size: 'M', color: 'Azul', cat: 'Pantalones' },
+    { name: 'Jeans Skinny', sku: 'JEAN-002', price: 95000, cost: 45000, stock: 30, size: 'S', color: 'Negro', cat: 'Pantalones' },
+    { name: 'Pantalón Cargo', sku: 'PANT-001', price: 75000, cost: 35000, stock: 3, size: 'M', color: 'Verde', cat: 'Pantalones' },
+    { name: 'Camiseta Básica', sku: 'CAMI-001', price: 35000, cost: 15000, stock: 120, size: 'S', color: 'Blanco', cat: 'Camisas' },
+    { name: 'Camisa Formal', sku: 'CAMI-002', price: 120000, cost: 55000, stock: 25, size: 'L', color: 'Azul', cat: 'Camisas' },
+    { name: 'Blusa Seda', sku: 'BLUS-001', price: 78000, cost: 35000, stock: 18, size: 'S', color: 'Beige', cat: 'Camisas' },
+    { name: 'Chaqueta Denim', sku: 'CHAQ-001', price: 185000, cost: 90000, stock: 8, size: 'L', color: 'Azul', cat: 'Chaquetas' },
+    { name: 'Chaqueta Cuero', sku: 'CHAQ-002', price: 350000, cost: 170000, stock: 12, size: 'M', color: 'Negro', cat: 'Chaquetas' },
+    { name: 'Vestido Floral', sku: 'VEST-001', price: 95000, cost: 45000, stock: 28, size: 'M', color: 'Rosa', cat: 'Vestidos' },
+    { name: 'Vestido Noche', sku: 'VEST-002', price: 250000, cost: 120000, stock: 10, size: 'S', color: 'Negro', cat: 'Vestidos' },
+    { name: 'Falda Plisada', sku: 'FALD-001', price: 65000, cost: 30000, stock: 5, size: 'S', color: 'Negro', cat: 'Faldas' },
+    { name: 'Sudadera Hoodie', sku: 'SUDA-001', price: 120000, cost: 55000, stock: 42, size: 'L', color: 'Gris', cat: 'Sudaderas' },
+    { name: 'Sudadera Crop', sku: 'SUDA-002', price: 95000, cost: 45000, stock: 35, size: 'S', color: 'Rosa', cat: 'Sudaderas' },
+    { name: 'Cinturón Cuero', sku: 'CINT-001', price: 55000, cost: 25000, stock: 50, size: 'Única', color: 'Marrón', cat: 'Accesorios' },
+    { name: 'Gafas Sol', sku: 'GAFAS-001', price: 75000, cost: 35000, stock: 20, size: 'Única', color: 'Negro', cat: 'Accesorios' },
+    { name: 'Shorts Deportivos', sku: 'SHRT-001', price: 55000, cost: 25000, stock: 30, size: 'M', color: 'Negro', cat: 'Shorts' },
+    { name: 'Shorts Mezclilla', sku: 'SHRT-002', price: 68000, cost: 32000, stock: 22, size: 'S', color: 'Azul', cat: 'Shorts' },
+  ]
+
+  for (const p of products) {
+    await prisma.product.upsert({
+      where: { sku: p.sku },
+      update: {},
+      create: {
+        name: p.name,
+        sku: p.sku,
+        price: p.price,
+        cost: p.cost,
+        stock: p.stock,
+        size: p.size,
+        color: p.color,
+        categoryId: catMap[p.cat],
+      },
+    })
+  }
+
+  console.log(`${products.length} productos creados`)
+
+  // Customers
+  const customers = [
+    { name: 'María García', email: 'maria@email.com', phone: '310-555-0101' },
+    { name: 'Juan Pérez', email: 'juan@email.com', phone: '315-555-0102' },
+    { name: 'Ana López', email: 'ana@email.com', phone: '320-555-0103' },
+    { name: 'Carlos Rodríguez', email: 'carlos@email.com', phone: '301-555-0104' },
+    { name: 'Laura Martínez', email: 'laura@email.com', phone: '312-555-0105' },
+  ]
+
+  const customerRecords = []
+  for (const c of customers) {
+    const record = await prisma.customer.upsert({
+      where: { email: c.email },
+      update: {},
+      create: c,
+    })
+    customerRecords.push(record)
+  }
+
+  console.log(`${customers.length} clientes creados`)
+
+  // Suppliers
+  const suppliers = [
+    { name: 'Distribuidora Moda Total', contact: 'Pedro Sánchez', phone: '310-555-0201', email: 'pedro@modatotal.com' },
+    { name: 'Importadora Textil SA', contact: 'Rosa Jiménez', phone: '315-555-0202', email: 'rosa@textilsa.com' },
+    { name: 'Mayorista Fashion', contact: 'Miguel Torres', phone: '320-555-0203', email: 'miguel@fashion.com' },
+  ]
+
+  for (const s of suppliers) {
+    await prisma.supplier.upsert({
+      where: { id: s.name },
+      update: {},
+      create: s,
+    }).catch(() => prisma.supplier.create({ data: s }))
+  }
+
+  console.log(`${suppliers.length} proveedores creados`)
+
+  // Fetch all products for sale items
+  const allProducts = await prisma.product.findMany()
+  const productMap = {}
+  for (const p of allProducts) {
+    productMap[p.sku] = p
+  }
+
+  // Clear existing sales data to allow re-seeding
+  const existingSalesCount = await prisma.sale.count()
+  if (existingSalesCount > 0) {
+    console.log(`Eliminando ${existingSalesCount} ventas existentes para re-sembrar...`)
+    await prisma.devolutionItem.deleteMany()
+    await prisma.devolution.deleteMany()
+    await prisma.saleItem.deleteMany()
+    await prisma.sale.deleteMany()
+  }
+
+  // Sales for the last 7 days
+  const now = new Date()
+  const TAX_RATE = 0.19
+  const users = [admin, vendedor]
+  const paymentMethods = ['efectivo', 'tarjeta', 'transferencia']
+
+  const dailySales = [
+    {
+      dayOffset: 6,
+      sales: [
+        { items: [{ sku: 'CAMI-001', qty: 2 }], customerIdx: 0, user: vendedor, payment: 'efectivo' },
+      ],
+    },
+    {
+      dayOffset: 5,
+      sales: [
+        { items: [{ sku: 'CHAQ-001', qty: 1 }], customerIdx: 1, user: admin, payment: 'tarjeta' },
+      ],
+    },
+    {
+      dayOffset: 4,
+      sales: [
+        { items: [{ sku: 'CAMI-001', qty: 1 }, { sku: 'CINT-001', qty: 1 }], customerIdx: 2, user: vendedor, payment: 'efectivo' },
+      ],
+    },
+    {
+      dayOffset: 3,
+      sales: [
+        { items: [{ sku: 'VEST-002', qty: 1 }], customerIdx: 0, user: admin, payment: 'transferencia' },
+      ],
+    },
+    {
+      dayOffset: 2,
+      sales: [
+        { items: [{ sku: 'SUDA-001', qty: 1 }, { sku: 'SHRT-001', qty: 1 }], customerIdx: 3, user: vendedor, payment: 'tarjeta' },
+      ],
+    },
+    {
+      dayOffset: 1,
+      sales: [
+        { items: [{ sku: 'CHAQ-002', qty: 1 }], customerIdx: 4, user: admin, payment: 'efectivo' },
+      ],
+    },
+    {
+      dayOffset: 0,
+      sales: [
+        { items: [{ sku: 'VEST-001', qty: 1 }, { sku: 'FALD-001', qty: 1 }], customerIdx: 1, user: vendedor, payment: 'tarjeta' },
+        { items: [{ sku: 'JEAN-002', qty: 1 }, { sku: 'BLUS-001', qty: 1 }], customerIdx: 2, user: admin, payment: 'efectivo' },
+      ],
+    },
+  ]
+
+  let saleCount = 0
+  let invoiceNum = 1001
+
+  for (const day of dailySales) {
+    const saleDate = new Date(now)
+    saleDate.setDate(saleDate.getDate() - day.dayOffset)
+    saleDate.setHours(10 + saleCount % 8, (saleCount * 37) % 60, 0, 0)
+
+    for (const s of day.sales) {
+      const invoice = `INV-${invoiceNum}`
+      invoiceNum++
+      saleCount++
+
+      let itemSubtotal = 0
+      const saleItemsData = []
+
+      for (const item of s.items) {
+        const product = productMap[item.sku]
+        const linePrice = product.price * item.qty
+        const lineDiscount = 0
+        const lineSubtotal = linePrice - lineDiscount
+        itemSubtotal += lineSubtotal
+
+        saleItemsData.push({
+          quantity: item.qty,
+          price: product.price,
+          discount: lineDiscount,
+          subtotal: lineSubtotal,
+          productId: product.id,
+        })
+      }
+
+      const tax = Math.round(itemSubtotal * TAX_RATE)
+      const discount = 0
+      const total = itemSubtotal + tax - discount
+
+      await prisma.sale.create({
+        data: {
+          invoice,
+          total,
+          subtotal: itemSubtotal,
+          tax,
+          discount,
+          paymentMethod: s.payment,
+          customerId: customerRecords[s.customerIdx].id,
+          userId: s.user.id,
+          status: 'activa',
+          createdAt: saleDate,
+          items: {
+            create: saleItemsData,
+          },
+        },
+      })
+
+      console.log(`  Venta ${invoice}: $${total.toLocaleString()} COP (${saleDate.toISOString().slice(0, 10)})`)
+    }
+  }
+
+  console.log(`${saleCount} ventas creadas para los últimos 7 días`)
+  console.log('Base de datos lista!')
+}
+
+main()
+  .catch((e) => {
+    console.error(e)
+    process.exit(1)
+  })
+  .finally(async () => {
+    await prisma.$disconnect()
+  })

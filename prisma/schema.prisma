@@ -1,0 +1,194 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model User {
+  id        String   @id @default(cuid())
+  username  String   @unique
+  password  String
+  nombre    String
+  rol       String   @default("vendedor") // admin, vendedor
+  activo    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  sales     Sale[]
+  devoluciones Devolution[]
+  cashRegisters CashRegister[]
+  cashMovements CashMovement[]
+}
+
+model Category {
+  id        String    @id @default(cuid())
+  name      String    @unique
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  products  Product[]
+}
+
+model Product {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  sku         String   @unique
+  barcode     String?
+  price       Float
+  cost        Float
+  stock       Int      @default(0)
+  minStock    Int      @default(5)
+  size        String?
+  color       String?
+  image       String?
+  categoryId  String
+  category    Category @relation(fields: [categoryId], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  saleItems   SaleItem[]
+  devolutionItems DevolutionItem[]
+  purchaseItems  PurchaseItem[]
+  inventoryMovements InventoryMovement[]
+}
+
+model Customer {
+  id        String  @id @default(cuid())
+  name      String
+  email     String? @unique
+  phone     String?
+  address   String?
+  points    Int     @default(0)
+  sales     Sale[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Sale {
+  id             String     @id @default(cuid())
+  invoice        String     @unique
+  total          Float
+  subtotal       Float
+  tax            Float
+  discount       Float      @default(0)
+  paymentMethod  String
+  customerId     String?
+  customer       Customer?  @relation(fields: [customerId], references: [id])
+  userId         String?
+  user           User?      @relation(fields: [userId], references: [id])
+  status         String     @default("activa") // activa, anulada
+  motivoAnulacion String?
+  items          SaleItem[]
+  devoluciones   Devolution[]
+  createdAt      DateTime   @default(now())
+}
+
+model SaleItem {
+  id        String  @id @default(cuid())
+  quantity  Int
+  price     Float
+  discount  Float   @default(0)
+  subtotal  Float
+  saleId    String
+  sale      Sale    @relation(fields: [saleId], references: [id])
+  productId String
+  product   Product @relation(fields: [productId], references: [id])
+}
+
+model Devolution {
+  id         String           @id @default(cuid())
+  invoice    String           @unique
+  saleId     String
+  sale       Sale             @relation(fields: [saleId], references: [id])
+  total      Float
+  motivo     String
+  userId     String?
+  user       User?            @relation(fields: [userId], references: [id])
+  items      DevolutionItem[]
+  createdAt  DateTime         @default(now())
+}
+
+model DevolutionItem {
+  id           String      @id @default(cuid())
+  devolutionId String
+  devolution   Devolution  @relation(fields: [devolutionId], references: [id])
+  productId    String
+  product      Product     @relation(fields: [productId], references: [id])
+  quantity     Int
+  price        Float
+  subtotal     Float
+  motivo       String
+}
+
+model Supplier {
+  id        String   @id @default(cuid())
+  name      String
+  contact   String?
+  phone     String?
+  email     String?
+  address   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  purchases Purchase[]
+}
+
+model Purchase {
+  id         String         @id @default(cuid())
+  invoice    String         @unique
+  supplierId String?
+  supplier   Supplier?      @relation(fields: [supplierId], references: [id])
+  total      Float
+  status     String         @default("pendiente") // pendiente, pagado
+  items      PurchaseItem[]
+  createdAt  DateTime       @default(now())
+}
+
+model PurchaseItem {
+  id         String   @id @default(cuid())
+  purchaseId String
+  purchase   Purchase @relation(fields: [purchaseId], references: [id])
+  productId  String
+  product    Product  @relation(fields: [productId], references: [id])
+  quantity   Int
+  price      Float
+  subtotal   Float
+}
+
+model CashRegister {
+  id             String         @id @default(cuid())
+  openDate       DateTime       @default(now())
+  closeDate      DateTime?
+  initialAmount  Float
+  expectedAmount Float?
+  realAmount     Float?
+  totalSales     Float          @default(0)
+  totalReturns   Float          @default(0)
+  status         String         @default("abierta") // abierta, cerrada
+  userId         String?
+  user           User?          @relation(fields: [userId], references: [id])
+  movements      CashMovement[]
+  createdAt      DateTime       @default(now())
+}
+
+model CashMovement {
+  id             String       @id @default(cuid())
+  cashRegisterId String
+  cashRegister   CashRegister @relation(fields: [cashRegisterId], references: [id])
+  type           String       // entrada, salida
+  amount         Float
+  reason         String
+  userId         String?
+  user           User?        @relation(fields: [userId], references: [id])
+  createdAt      DateTime     @default(now())
+}
+
+model InventoryMovement {
+  id        String   @id @default(cuid())
+  productId String
+  product   Product  @relation(fields: [productId], references: [id])
+  type      String   // entrada, salida
+  quantity  Int
+  reason    String
+  createdAt DateTime @default(now())
+}
