@@ -1,0 +1,11 @@
+node_modules/
+dist/
+.env
+.env.local
+prisma/dev.db
+prisma/dev.db-journal
+store-config.json
+backups/
+*.log
+.DS_Store
+Thumbs.db
