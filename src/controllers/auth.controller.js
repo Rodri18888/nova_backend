@@ -12,3 +12,21 @@ export async function login(req, res) {
   const token = jwt.sign({ id: user.id, username: user.username, nombre: user.nombre, rol: user.rol }, JWT_SECRET, { algorithm: 'HS256', expiresIn: '8h' })
   res.json({ token, user: { id: user.id, username: user.username, nombre: user.nombre, rol: user.rol } })
 }
+
+export async function register(req, res) {
+  const { username, password, nombre } = req.body
+  if (!username || !password || !nombre)
+    return res.status(400).json({ error: 'Nombre, usuario y contraseña son requeridos' })
+  if (String(password).length < 6)
+    return res.status(400).json({ error: 'La contraseña debe tener al menos 6 caracteres' })
+
+  const existe = await prisma.user.findUnique({ where: { username: String(username) } })
+  if (existe) return res.status(400).json({ error: 'El usuario ya existe' })
+
+  const hash = await bcrypt.hash(String(password), 10)
+  const user = await prisma.user.create({
+    data: { username: String(username), password: hash, nombre: String(nombre), rol: 'vendedor' },
+  })
+  const token = jwt.sign({ id: user.id, username: user.username, nombre: user.nombre, rol: user.rol }, JWT_SECRET, { algorithm: 'HS256', expiresIn: '8h' })
+  res.status(201).json({ token, user: { id: user.id, username: user.username, nombre: user.nombre, rol: user.rol } })
+}
