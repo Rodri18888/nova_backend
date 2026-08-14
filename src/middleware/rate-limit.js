@@ -19,3 +19,9 @@ export const backupLimiter = rateLimit({
   max: 5,
   message: { error: 'Demasiadas solicitudes de backup' },
 })
+
+export const registerLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 5,
+  message: { error: 'Demasiados intentos de registro' },
+})
