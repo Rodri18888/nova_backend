@@ -9,8 +9,8 @@ export async function login(req, res) {
   const user = await prisma.user.findUnique({ where: { username: String(username) } })
   if (!user || !user.activo) return res.status(401).json({ error: 'Credenciales inválidas' })
   if (!await bcrypt.compare(String(password), user.password)) return res.status(401).json({ error: 'Credenciales inválidas' })
-  const token = jwt.sign({ id: user.id, username: user.username, nombre: user.nombre, rol: user.rol }, JWT_SECRET, { algorithm: 'HS256', expiresIn: '8h' })
-  res.json({ token, user: { id: user.id, username: user.username, nombre: user.nombre, rol: user.rol } })
+  const token = jwt.sign({ id: user.id, username: user.username, nombre: user.nombre, email: user.email, rol: user.rol }, JWT_SECRET, { algorithm: 'HS256', expiresIn: '8h' })
+  res.json({ token, user: { id: user.id, username: user.username, nombre: user.nombre, email: user.email, rol: user.rol } })
 }
 
 export async function register(req, res) {
@@ -20,13 +20,23 @@ export async function register(req, res) {
   if (String(password).length < 6)
     return res.status(400).json({ error: 'La contraseña debe tener al menos 6 caracteres' })
 
-  const existe = await prisma.user.findUnique({ where: { username: String(username) } })
-  if (existe) return res.status(400).json({ error: 'El usuario ya existe' })
+  const existe = await prisma.user.findFirst({
+      where: {
+        OR: [
+          { username: String(username) },
+          { email: String(email) }
+        ]
+      }
+    })
+
+    if (existe) {
+      return res.status(400).json({ error: 'El usuario o email ya existe' })
+    }
 
   const hash = await bcrypt.hash(String(password), 10)
   const user = await prisma.user.create({
-    data: { username: String(username), password: hash, nombre: String(nombre), rol: 'vendedor' },
+    data: { username: String(username), password: hash, nombre: String(nombre), email: String(email), rol: 'vendedor' },
   })
-  const token = jwt.sign({ id: user.id, username: user.username, nombre: user.nombre, rol: user.rol }, JWT_SECRET, { algorithm: 'HS256', expiresIn: '8h' })
-  res.status(201).json({ token, user: { id: user.id, username: user.username, nombre: user.nombre, rol: user.rol } })
+  const token = jwt.sign({ id: user.id, username: user.username, nombre: user.nombre, email: user.email, rol: user.rol }, JWT_SECRET, { algorithm: 'HS256', expiresIn: '8h' })
+  res.status(201).json({ token, user: { id: user.id, username: user.username, nombre: user.nombre, email: user.email, rol: user.rol } })
 }
