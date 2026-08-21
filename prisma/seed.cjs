@@ -4,22 +4,32 @@ const bcrypt = require('bcryptjs')
 const prisma = new PrismaClient()
 
 async function main() {
-  console.log('Sembrando base de datos...')
-
-  // Users
+  console.log('Sembrando base de datos en Neon...')
   const adminPass = await bcrypt.hash('admin123', 10)
   const vendedorPass = await bcrypt.hash('vendedor123', 10)
 
   const admin = await prisma.user.upsert({
     where: { username: 'admin' },
     update: {},
-    create: { username: 'admin', password: adminPass, nombre: 'Administrador', rol: 'admin' },
+    create: { 
+      username: 'admin', 
+      email: 'admin@tienda.com', 
+      password: adminPass, 
+      nombre: 'Administrador', 
+      rol: 'admin' 
+    },
   })
 
   const vendedor = await prisma.user.upsert({
     where: { username: 'vendedor' },
     update: {},
-    create: { username: 'vendedor', password: vendedorPass, nombre: 'Juan Vendedor', rol: 'vendedor' },
+    create: { 
+      username: 'vendedor', 
+      email: 'vendedor@tienda.com', 
+      password: vendedorPass, 
+      nombre: 'Juan Vendedor', 
+      rol: 'vendedor' 
+    },
   })
 
   console.log('Usuarios creados:', admin.username, vendedor.username)
@@ -100,7 +110,7 @@ async function main() {
 
   console.log(`${customers.length} clientes creados`)
 
-  // Suppliers
+  // Suppliers 
   const suppliers = [
     { name: 'Distribuidora Moda Total', contact: 'Pedro Sánchez', phone: '310-555-0201', email: 'pedro@modatotal.com' },
     { name: 'Importadora Textil SA', contact: 'Rosa Jiménez', phone: '315-555-0202', email: 'rosa@textilsa.com' },
@@ -109,7 +119,7 @@ async function main() {
 
   for (const s of suppliers) {
     await prisma.supplier.upsert({
-      where: { id: s.name },
+      where: { email: s.email }, 
       update: {},
       create: s,
     }).catch(() => prisma.supplier.create({ data: s }))
@@ -137,7 +147,6 @@ async function main() {
   // Sales for the last 7 days
   const now = new Date()
   const TAX_RATE = 0.19
-  const users = [admin, vendedor]
   const paymentMethods = ['efectivo', 'tarjeta', 'transferencia']
 
   const dailySales = [
@@ -192,7 +201,7 @@ async function main() {
   for (const day of dailySales) {
     const saleDate = new Date(now)
     saleDate.setDate(saleDate.getDate() - day.dayOffset)
-    saleDate.setHours(10 + saleCount % 8, (saleCount * 37) % 60, 0, 0)
+    saleDate.setHours(10 + (saleCount % 8), (saleCount * 37) % 60, 0, 0)
 
     for (const s of day.sales) {
       const invoice = `INV-${invoiceNum}`
@@ -204,14 +213,15 @@ async function main() {
 
       for (const item of s.items) {
         const product = productMap[item.sku]
-        const linePrice = product.price * item.qty
+        const priceNum = Number(product.price)
+        const linePrice = priceNum * item.qty
         const lineDiscount = 0
         const lineSubtotal = linePrice - lineDiscount
         itemSubtotal += lineSubtotal
 
         saleItemsData.push({
           quantity: item.qty,
-          price: product.price,
+          price: priceNum,
           discount: lineDiscount,
           subtotal: lineSubtotal,
           productId: product.id,
@@ -245,7 +255,7 @@ async function main() {
   }
 
   console.log(`${saleCount} ventas creadas para los últimos 7 días`)
-  console.log('Base de datos lista!')
+  console.log('¡Base de datos en Neon sembrada con éxito!')
 }
 
 main()
