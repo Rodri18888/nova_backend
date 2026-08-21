@@ -14,9 +14,9 @@ export async function login(req, res) {
 }
 
 export async function register(req, res) {
-  const { username, password, nombre } = req.body
-  if (!username || !password || !nombre)
-    return res.status(400).json({ error: 'Nombre, usuario y contraseña son requeridos' })
+  const { username, password, email, nombre } = req.body
+  if (!username || !password || !email || !nombre)
+    return res.status(400).json({ error: 'Nombre, usuario, email y contraseña son requeridos' })
   if (String(password).length < 6)
     return res.status(400).json({ error: 'La contraseña debe tener al menos 6 caracteres' })
 

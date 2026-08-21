@@ -4,20 +4,20 @@ import { sanitizeString, pick } from '../lib/route-helpers.js'
 
 export async function listUsers(req, res) {
   res.json(await prisma.user.findMany({
-    select: { id: true, username: true, nombre: true, rol: true, activo: true, createdAt: true },
+    select: { id: true, username: true, nombre: true, email: true, rol: true, activo: true, createdAt: true },
     orderBy: { createdAt: 'desc' },
   }))
 }
 
 export async function createUser(req, res) {
-  const { username, password, nombre, rol } = req.body
-  if (!username || !password || !nombre) return res.status(400).json({ error: 'Usuario, contraseña y nombre requeridos' })
+  const { username, password, email, nombre, rol } = req.body
+  if (!username || !password || !email || !nombre) return res.status(400).json({ error: 'Usuario, email, contraseña y nombre requeridos' })
   if (String(password).length < 6) return res.status(400).json({ error: 'La contraseña debe tener al menos 6 caracteres' })
   if (!['admin', 'vendedor'].includes(rol)) return res.status(400).json({ error: 'Rol inválido' })
   const hash = await bcrypt.hash(String(password), 10)
   res.json(await prisma.user.create({
-    data: { username: String(username), password: hash, nombre: sanitizeString(nombre), rol: rol || 'vendedor' },
-    select: { id: true, username: true, nombre: true, rol: true, activo: true },
+    data: { username: String(username), password: hash, email: String(email), nombre: sanitizeString(nombre), rol: rol || 'vendedor' },
+    select: { id: true, username: true, nombre: true, email: true, rol: true, activo: true },
   }))
 }
 

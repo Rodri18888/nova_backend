@@ -3,21 +3,22 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
-  url      = "file:./dev.db"
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 model User {
-  id        String   @id @default(cuid())
-  username  String   @unique
-  password  String
-  nombre    String
-  rol       String   @default("vendedor") // admin, vendedor
-  activo    Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  sales     Sale[]
-  devoluciones Devolution[]
+  id            String         @id @default(cuid())
+  username      String         @unique
+  email         String         @unique
+  password      String
+  nombre        String
+  rol           String         @default("vendedor") // admin, vendedor
+  activo        Boolean        @default(true)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  sales         Sale[]
+  devoluciones  Devolution[]
   cashRegisters CashRegister[]
   cashMovements CashMovement[]
 }
@@ -31,65 +32,65 @@ model Category {
 }
 
 model Product {
-  id          String   @id @default(cuid())
-  name        String
-  description String?
-  sku         String   @unique
-  barcode     String?
-  price       Float
-  cost        Float
-  stock       Int      @default(0)
-  minStock    Int      @default(5)
-  size        String?
-  color       String?
-  image       String?
-  categoryId  String
-  category    Category @relation(fields: [categoryId], references: [id])
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  saleItems   SaleItem[]
-  devolutionItems DevolutionItem[]
-  purchaseItems  PurchaseItem[]
+  id                 String              @id @default(cuid())
+  name               String
+  description        String?
+  sku                String              @unique
+  barcode            String?
+  price              Decimal             @db.Decimal(12, 2)
+  cost               Decimal             @db.Decimal(12, 2)
+  stock              Int                 @default(0)
+  minStock           Int                 @default(5)
+  size               String?
+  color              String?
+  image              String?
+  categoryId         String
+  category           Category            @relation(fields: [categoryId], references: [id])
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  saleItems          SaleItem[]
+  devolutionItems    DevolutionItem[]
+  purchaseItems      PurchaseItem[]
   inventoryMovements InventoryMovement[]
 }
 
 model Customer {
-  id        String  @id @default(cuid())
+  id        String   @id @default(cuid())
   name      String
-  email     String? @unique
+  email     String?  @unique
   phone     String?
   address   String?
-  points    Int     @default(0)
+  points    Int      @default(0)
   sales     Sale[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
 
 model Sale {
-  id             String     @id @default(cuid())
-  invoice        String     @unique
-  total          Float
-  subtotal       Float
-  tax            Float
-  discount       Float      @default(0)
-  paymentMethod  String
-  customerId     String?
-  customer       Customer?  @relation(fields: [customerId], references: [id])
-  userId         String?
-  user           User?      @relation(fields: [userId], references: [id])
-  status         String     @default("activa") // activa, anulada
+  id              String       @id @default(cuid())
+  invoice         String       @unique
+  total           Decimal      @db.Decimal(12, 2)
+  subtotal        Decimal      @db.Decimal(12, 2)
+  tax             Decimal      @db.Decimal(12, 2)
+  discount        Decimal      @default(0) @db.Decimal(12, 2)
+  paymentMethod   String
+  customerId      String?
+  customer        Customer?    @relation(fields: [customerId], references: [id])
+  userId          String?
+  user            User?        @relation(fields: [userId], references: [id])
+  status          String       @default("activa") // activa, anulada
   motivoAnulacion String?
-  items          SaleItem[]
-  devoluciones   Devolution[]
-  createdAt      DateTime   @default(now())
+  items           SaleItem[]
+  devoluciones    Devolution[]
+  createdAt       DateTime     @default(now())
 }
 
 model SaleItem {
   id        String  @id @default(cuid())
   quantity  Int
-  price     Float
-  discount  Float   @default(0)
-  subtotal  Float
+  price     Decimal @db.Decimal(12, 2)
+  discount  Decimal @default(0) @db.Decimal(12, 2)
+  subtotal  Decimal @db.Decimal(12, 2)
   saleId    String
   sale      Sale    @relation(fields: [saleId], references: [id])
   productId String
@@ -97,39 +98,39 @@ model SaleItem {
 }
 
 model Devolution {
-  id         String           @id @default(cuid())
-  invoice    String           @unique
-  saleId     String
-  sale       Sale             @relation(fields: [saleId], references: [id])
-  total      Float
-  motivo     String
-  userId     String?
-  user       User?            @relation(fields: [userId], references: [id])
-  items      DevolutionItem[]
-  createdAt  DateTime         @default(now())
+  id        String           @id @default(cuid())
+  invoice   String           @unique
+  saleId    String
+  sale      Sale             @relation(fields: [saleId], references: [id])
+  total     Decimal          @db.Decimal(12, 2)
+  motivo    String
+  userId    String?
+  user      User?            @relation(fields: [userId], references: [id])
+  items     DevolutionItem[]
+  createdAt DateTime         @default(now())
 }
 
 model DevolutionItem {
-  id           String      @id @default(cuid())
+  id           String     @id @default(cuid())
   devolutionId String
-  devolution   Devolution  @relation(fields: [devolutionId], references: [id])
+  devolution   Devolution @relation(fields: [devolutionId], references: [id])
   productId    String
-  product      Product     @relation(fields: [productId], references: [id])
+  product      Product    @relation(fields: [productId], references: [id])
   quantity     Int
-  price        Float
-  subtotal     Float
+  price        Decimal    @db.Decimal(12, 2)
+  subtotal     Decimal    @db.Decimal(12, 2)
   motivo       String
 }
 
 model Supplier {
-  id        String   @id @default(cuid())
+  id        String     @id @default(cuid())
   name      String
   contact   String?
   phone     String?
   email     String?
   address   String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
   purchases Purchase[]
 }
 
@@ -138,7 +139,7 @@ model Purchase {
   invoice    String         @unique
   supplierId String?
   supplier   Supplier?      @relation(fields: [supplierId], references: [id])
-  total      Float
+  total      Decimal        @db.Decimal(12, 2)
   status     String         @default("pendiente") // pendiente, pagado
   items      PurchaseItem[]
   createdAt  DateTime       @default(now())
@@ -151,19 +152,19 @@ model PurchaseItem {
   productId  String
   product    Product  @relation(fields: [productId], references: [id])
   quantity   Int
-  price      Float
-  subtotal   Float
+  price      Decimal  @db.Decimal(12, 2)
+  subtotal   Decimal  @db.Decimal(12, 2)
 }
 
 model CashRegister {
   id             String         @id @default(cuid())
   openDate       DateTime       @default(now())
   closeDate      DateTime?
-  initialAmount  Float
-  expectedAmount Float?
-  realAmount     Float?
-  totalSales     Float          @default(0)
-  totalReturns   Float          @default(0)
+  initialAmount  Decimal        @db.Decimal(12, 2)
+  expectedAmount Decimal?       @db.Decimal(12, 2)
+  realAmount     Decimal?       @db.Decimal(12, 2)
+  totalSales     Decimal        @default(0) @db.Decimal(12, 2)
+  totalReturns   Decimal        @default(0) @db.Decimal(12, 2)
   status         String         @default("abierta") // abierta, cerrada
   userId         String?
   user           User?          @relation(fields: [userId], references: [id])
@@ -176,7 +177,7 @@ model CashMovement {
   cashRegisterId String
   cashRegister   CashRegister @relation(fields: [cashRegisterId], references: [id])
   type           String       // entrada, salida
-  amount         Float
+  amount         Decimal      @db.Decimal(12, 2)
   reason         String
   userId         String?
   user           User?        @relation(fields: [userId], references: [id])
