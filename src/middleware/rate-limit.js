@@ -25,3 +25,9 @@ export const registerLimiter = rateLimit({
   max: 5,
   message: { error: 'Demasiados intentos de registro' },
 })
+
+export const forgotPasswordLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 5,
+  message: { error: 'Demasiadas solicitudes de recuperación. Intenta más tarde' },
+})
