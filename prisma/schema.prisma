@@ -8,19 +8,21 @@ datasource db {
 }
 
 model User {
-  id            String         @id @default(cuid())
-  username      String         @unique
-  email         String         @unique
-  password      String
-  nombre        String
-  rol           String         @default("vendedor") // admin, vendedor
-  activo        Boolean        @default(true)
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
-  sales         Sale[]
-  devoluciones  Devolution[]
-  cashRegisters CashRegister[]
-  cashMovements CashMovement[]
+  id                   String         @id @default(cuid())
+  username             String         @unique
+  email                String         @unique
+  password             String
+  nombre               String
+  rol                  String         @default("vendedor") // admin, vendedor
+  activo               Boolean        @default(true)
+  resetPasswordToken   String?
+  resetPasswordExpires DateTime?
+  createdAt            DateTime       @default(now())
+  updatedAt            DateTime       @updatedAt
+  sales                Sale[]
+  devoluciones         Devolution[]
+  cashRegisters        CashRegister[]
+  cashMovements        CashMovement[]
 }
 
 model Category {
