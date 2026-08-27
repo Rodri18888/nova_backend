@@ -5,6 +5,20 @@ const prisma = new PrismaClient()
 
 async function main() {
   console.log('Sembrando base de datos en Neon...')
+
+  // 1. Crear o buscar la Tienda por defecto
+  const defaultStore = await prisma.store.upsert({
+    where: { code: 'STORE-001' },
+    update: {},
+    create: {
+      code: 'STORE-001',
+      name: 'Tienda Principal',
+    },
+  })
+
+  console.log('Tienda vinculada:', defaultStore.name)
+
+  // 2. Usuarios
   const adminPass = await bcrypt.hash('admin123', 10)
   const vendedorPass = await bcrypt.hash('vendedor123', 10)
 
@@ -16,7 +30,8 @@ async function main() {
       email: 'admin@tienda.com', 
       password: adminPass, 
       nombre: 'Administrador', 
-      rol: 'admin' 
+      rol: 'admin',
+      storeId: defaultStore.id,
     },
   })
 
@@ -28,13 +43,14 @@ async function main() {
       email: 'vendedor@tienda.com', 
       password: vendedorPass, 
       nombre: 'Juan Vendedor', 
-      rol: 'vendedor' 
+      rol: 'vendedor',
+      storeId: defaultStore.id,
     },
   })
 
   console.log('Usuarios creados:', admin.username, vendedor.username)
 
-  // Categories
+  // 3. Categorías
   const categories = [
     'Pantalones', 'Camisas', 'Chaquetas', 'Vestidos', 'Faldas', 'Sudaderas', 'Accesorios', 'Shorts'
   ]
@@ -44,12 +60,15 @@ async function main() {
     const cat = await prisma.category.upsert({
       where: { name },
       update: {},
-      create: { name },
+      create: { 
+        name,
+        storeId: defaultStore.id,
+      },
     })
     catMap[name] = cat.id
   }
 
-  // Products
+  // 4. Productos
   const products = [
     { name: 'Jeans Clásicos', sku: 'JEAN-001', price: 89900, cost: 42000, stock: 45, size: 'M', color: 'Azul', cat: 'Pantalones' },
     { name: 'Jeans Skinny', sku: 'JEAN-002', price: 95000, cost: 45000, stock: 30, size: 'S', color: 'Negro', cat: 'Pantalones' },
@@ -83,13 +102,14 @@ async function main() {
         size: p.size,
         color: p.color,
         categoryId: catMap[p.cat],
+        storeId: defaultStore.id,
       },
     })
   }
 
   console.log(`${products.length} productos creados`)
 
-  // Customers
+  // 5. Clientes
   const customers = [
     { name: 'María García', email: 'maria@email.com', phone: '310-555-0101' },
     { name: 'Juan Pérez', email: 'juan@email.com', phone: '315-555-0102' },
@@ -103,14 +123,17 @@ async function main() {
     const record = await prisma.customer.upsert({
       where: { email: c.email },
       update: {},
-      create: c,
+      create: {
+        ...c,
+        storeId: defaultStore.id,
+      },
     })
     customerRecords.push(record)
   }
 
   console.log(`${customers.length} clientes creados`)
 
-  // Suppliers 
+  // 6. Proveedores
   const suppliers = [
     { name: 'Distribuidora Moda Total', contact: 'Pedro Sánchez', phone: '310-555-0201', email: 'pedro@modatotal.com' },
     { name: 'Importadora Textil SA', contact: 'Rosa Jiménez', phone: '315-555-0202', email: 'rosa@textilsa.com' },
@@ -121,20 +144,23 @@ async function main() {
     await prisma.supplier.upsert({
       where: { email: s.email }, 
       update: {},
-      create: s,
-    }).catch(() => prisma.supplier.create({ data: s }))
+      create: {
+        ...s,
+        storeId: defaultStore.id,
+      },
+    }).catch(() => prisma.supplier.create({ data: { ...s, storeId: defaultStore.id } }))
   }
 
   console.log(`${suppliers.length} proveedores creados`)
 
-  // Fetch all products for sale items
+  // Obtener mapeo de productos
   const allProducts = await prisma.product.findMany()
   const productMap = {}
   for (const p of allProducts) {
     productMap[p.sku] = p
   }
 
-  // Clear existing sales data to allow re-seeding
+  // Limpiar datos antiguos de ventas
   const existingSalesCount = await prisma.sale.count()
   if (existingSalesCount > 0) {
     console.log(`Eliminando ${existingSalesCount} ventas existentes para re-sembrar...`)
@@ -144,10 +170,9 @@ async function main() {
     await prisma.sale.deleteMany()
   }
 
-  // Sales for the last 7 days
+  // 7. Ventas de los últimos 7 días
   const now = new Date()
   const TAX_RATE = 0.19
-  const paymentMethods = ['efectivo', 'tarjeta', 'transferencia']
 
   const dailySales = [
     {
@@ -225,6 +250,7 @@ async function main() {
           discount: lineDiscount,
           subtotal: lineSubtotal,
           productId: product.id,
+          storeId: defaultStore.id, // <-- Asignado a SaleItem
         })
       }
 
@@ -242,6 +268,7 @@ async function main() {
           paymentMethod: s.payment,
           customerId: customerRecords[s.customerIdx].id,
           userId: s.user.id,
+          storeId: defaultStore.id, // <-- Asignado a Sale
           status: 'activa',
           createdAt: saleDate,
           items: {
