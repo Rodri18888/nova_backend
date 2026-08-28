@@ -23,21 +23,28 @@ model User {
   devoluciones         Devolution[]
   cashRegisters        CashRegister[]
   cashMovements        CashMovement[]
+  storeId              String
+  store                Store @relation(fields: [storeId], references: [id])
+
 }
 
 model Category {
   id        String    @id @default(cuid())
-  name      String    @unique
+  name      String
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
   products  Product[]
+  storeId   String
+  store     Store @relation(fields: [storeId], references: [id])
+
+  @@unique([storeId, name])
 }
 
 model Product {
   id                 String              @id @default(cuid())
   name               String
   description        String?
-  sku                String              @unique
+  sku                String
   barcode            String?
   price              Decimal             @db.Decimal(12, 2)
   cost               Decimal             @db.Decimal(12, 2)
@@ -54,23 +61,31 @@ model Product {
   devolutionItems    DevolutionItem[]
   purchaseItems      PurchaseItem[]
   inventoryMovements InventoryMovement[]
+  storeId            String
+  store              Store @relation(fields: [storeId], references: [id])
+
+  @@unique([storeId, sku])
 }
 
 model Customer {
   id        String   @id @default(cuid())
   name      String
-  email     String?  @unique
+  email     String?
   phone     String?
   address   String?
   points    Int      @default(0)
   sales     Sale[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  storeId   String
+  store     Store @relation(fields: [storeId], references: [id])
+
+  @@unique([storeId, email])
 }
 
 model Sale {
   id              String       @id @default(cuid())
-  invoice         String       @unique
+  invoice         String
   total           Decimal      @db.Decimal(12, 2)
   subtotal        Decimal      @db.Decimal(12, 2)
   tax             Decimal      @db.Decimal(12, 2)
@@ -85,6 +100,10 @@ model Sale {
   items           SaleItem[]
   devoluciones    Devolution[]
   createdAt       DateTime     @default(now())
+  storeId         String
+  store           Store @relation(fields: [storeId], references: [id])
+
+  @@unique([storeId, invoice])
 }
 
 model SaleItem {
@@ -97,11 +116,13 @@ model SaleItem {
   sale      Sale    @relation(fields: [saleId], references: [id])
   productId String
   product   Product @relation(fields: [productId], references: [id])
+  storeId   String
+  store     Store @relation(fields: [storeId], references: [id])
 }
 
 model Devolution {
   id        String           @id @default(cuid())
-  invoice   String           @unique
+  invoice   String
   saleId    String
   sale      Sale             @relation(fields: [saleId], references: [id])
   total     Decimal          @db.Decimal(12, 2)
@@ -110,6 +131,10 @@ model Devolution {
   user      User?            @relation(fields: [userId], references: [id])
   items     DevolutionItem[]
   createdAt DateTime         @default(now())
+  storeId   String
+  store     Store @relation(fields: [storeId], references: [id])
+
+  @@unique([storeId, invoice])
 }
 
 model DevolutionItem {
@@ -122,6 +147,8 @@ model DevolutionItem {
   price        Decimal    @db.Decimal(12, 2)
   subtotal     Decimal    @db.Decimal(12, 2)
   motivo       String
+  storeId      String
+  store        Store @relation(fields: [storeId], references: [id])
 }
 
 model Supplier {
@@ -134,17 +161,23 @@ model Supplier {
   createdAt DateTime   @default(now())
   updatedAt DateTime   @updatedAt
   purchases Purchase[]
+  storeId   String
+  store     Store @relation(fields: [storeId], references: [id])
 }
 
 model Purchase {
   id         String         @id @default(cuid())
-  invoice    String         @unique
+  invoice    String
   supplierId String?
   supplier   Supplier?      @relation(fields: [supplierId], references: [id])
   total      Decimal        @db.Decimal(12, 2)
   status     String         @default("pendiente") // pendiente, pagado
   items      PurchaseItem[]
   createdAt  DateTime       @default(now())
+  storeId    String
+  store      Store @relation(fields: [storeId], references: [id])
+
+  @@unique([storeId, invoice])
 }
 
 model PurchaseItem {
@@ -156,6 +189,8 @@ model PurchaseItem {
   quantity   Int
   price      Decimal  @db.Decimal(12, 2)
   subtotal   Decimal  @db.Decimal(12, 2)
+  storeId    String
+  store      Store @relation(fields: [storeId], references: [id])
 }
 
 model CashRegister {
@@ -172,6 +207,8 @@ model CashRegister {
   user           User?          @relation(fields: [userId], references: [id])
   movements      CashMovement[]
   createdAt      DateTime       @default(now())
+  storeId        String
+  store          Store          @relation(fields: [storeId], references: [id])
 }
 
 model CashMovement {
@@ -184,6 +221,8 @@ model CashMovement {
   userId         String?
   user           User?        @relation(fields: [userId], references: [id])
   createdAt      DateTime     @default(now())
+  storeId        String
+  store          Store        @relation(fields: [storeId], references: [id])
 }
 
 model InventoryMovement {
@@ -194,4 +233,26 @@ model InventoryMovement {
   quantity  Int
   reason    String
   createdAt DateTime @default(now())
+  storeId   String
+  store     Store @relation(fields: [storeId], references: [id])
+}
+
+model Store {
+  id                 String @id @default(cuid())
+  code               String @unique
+  name               String
+  users              User[]
+  categories         Category[]
+  products           Product[]
+  customers          Customer[]
+  sales              Sale[]
+  saleItems          SaleItem[]
+  devoluciones       Devolution[]
+  devolutionItems    DevolutionItem[]
+  suppliers          Supplier[]
+  purchases          Purchase[]
+  purchaseItems      PurchaseItem[]
+  cashRegisters      CashRegister[]
+  cashMovements      CashMovement[]
+  inventoryMovements InventoryMovement[]
 }
