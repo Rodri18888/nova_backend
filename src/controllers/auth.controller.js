@@ -13,8 +13,14 @@ export async function login(req, res) {
   const { username, password } = req.body;
   if (!username || !password)
     return res.status(400).json({ error: "Usuario y contraseña requeridos" });
-  const user = await prisma.user.findUnique({
-    where: { username: String(username) },
+  const user = await prisma.user.findFirst({
+    where: {
+      OR: [
+        { username: String(username) },
+        { email: String(username).toLowerCase().trim() },
+      ],
+    },
+    include: { store: true },
   });
   if (!user || !user.activo)
     return res.status(401).json({ error: "Credenciales inválidas" });
@@ -41,50 +47,25 @@ export async function login(req, res) {
       email: user.email,
       rol: user.rol,
       storeId: user.storeId,
+      storeName: user.store?.name || "",
     },
   });
 }
 
-export async function register(req, res) {
-  const { username, password, email, nombre, storeCode } = req.body;
-  if (!username || !password || !email || !nombre)
-    return res
-      .status(400)
-      .json({ error: "Nombre, usuario, email y contraseña son requeridos" });
-  if (String(password).length < 6)
-    return res
-      .status(400)
-      .json({ error: "La contraseña debe tener al menos 6 caracteres" });
+function buildAuthResponse(user, store) {
+  return {
+    id: user.id,
+    username: user.username,
+    nombre: user.nombre,
+    email: user.email,
+    rol: user.rol,
+    storeId: user.storeId,
+    storeName: store?.name || "",
+  };
+}
 
-  const existe = await prisma.user.findFirst({
-    where: {
-      OR: [{ username: String(username) }, { email: String(email) }],
-    },
-  });
-
-  if (existe) {
-    return res.status(400).json({ error: "El usuario o email ya existe" });
-  }
-
-  const store = storeCode
-    ? await prisma.store.findUnique({ where: { code: String(storeCode) } })
-    : await prisma.store.findFirst();
-  if (!store) {
-    return res.status(400).json({ error: "Código de tienda inválido" });
-  }
-
-  const hash = await bcrypt.hash(String(password), 10);
-  const user = await prisma.user.create({
-    data: {
-      username: String(username),
-      password: hash,
-      nombre: String(nombre),
-      email: String(email),
-      rol: "vendedor",
-      storeId: store.id,
-    },
-  });
-  const token = jwt.sign(
+function signToken(user) {
+  return jwt.sign(
     {
       id: user.id,
       username: user.username,
@@ -96,18 +77,111 @@ export async function register(req, res) {
     JWT_SECRET,
     { algorithm: "HS256", expiresIn: "8h" },
   );
+}
+
+export async function register(req, res) {
+  const { username, password, email, nombre, storeCode, storeName } = req.body;
+
+  if (!password || !email || !nombre)
+    return res
+      .status(400)
+      .json({ error: "Nombre, correo y contraseña son requeridos" });
+  if (String(password).length < 6)
+    return res
+      .status(400)
+      .json({ error: "La contraseña debe tener al menos 6 caracteres" });
+
+  const emailClean = String(email).toLowerCase().trim();
+  const usernameClean = username ? String(username) : "";
+  const existe = await prisma.user.findFirst({
+    where: {
+      OR: [{ username: usernameClean }, { email: emailClean }],
+    },
+  });
+
+  if (existe) {
+    return res.status(400).json({ error: "El usuario o email ya existe" });
+  }
+
+  let store;
+  let role = "vendedor";
+
+  if (storeName) {
+    const code = String(storeCode || "").trim().toUpperCase();
+    if (!code)
+      return res
+        .status(400)
+        .json({ error: "El código de la tienda es requerido" });
+    const existStore = await prisma.store.findUnique({ where: { code } });
+    if (existStore)
+      return res.status(400).json({ error: "El código de tienda ya existe" });
+
+    const hash = await bcrypt.hash(String(password), 10);
+    const result = await prisma.$transaction(async (tx) => {
+      const newStore = await tx.store.create({
+        data: { code, name: String(storeName).trim() },
+      });
+      let ownerUsername = String(username || "");
+      if (!ownerUsername) {
+        ownerUsername = emailClean.split("@")[0] || "admin";
+        let n = 1;
+        let candidate = ownerUsername;
+        while (await tx.user.findUnique({ where: { username: candidate } })) {
+          candidate = n > 1 ? `${ownerUsername}${n}` : `${ownerUsername}${Math.floor(Math.random() * 900 + 100)}`;
+          n++;
+        }
+        ownerUsername = candidate;
+      }
+      const owner = await tx.user.create({
+        data: {
+          username: ownerUsername,
+          password: hash,
+          nombre: String(nombre),
+          email: emailClean,
+          rol: "admin",
+          storeId: newStore.id,
+        },
+      });
+      return { newStore, owner };
+    });
+    store = result.newStore;
+    const token = signToken(result.owner);
+    return res.status(201).json({
+      token,
+      user: buildAuthResponse(result.owner, store),
+    });
+  }
+
+  if (!username)
+    return res.status(400).json({ error: "El usuario es requerido" });
+  if (!storeCode)
+    return res
+      .status(400)
+      .json({ error: "El código de tienda es requerido" });
+  store = await prisma.store.findUnique({
+    where: { code: String(storeCode).trim().toUpperCase() },
+  });
+  if (!store) {
+    return res.status(400).json({ error: "Código de tienda inválido" });
+  }
+
+  const hash = await bcrypt.hash(String(password), 10);
+  const user = await prisma.user.create({
+    data: {
+      username: String(username),
+      password: hash,
+      nombre: String(nombre),
+      email: emailClean,
+      rol: role,
+      storeId: store.id,
+    },
+  });
+  const token = signToken(user);
   res
     .status(201)
     .json({
       token,
-      user: {
-        id: user.id,
-        username: user.username,
-        nombre: user.nombre,
-        email: user.email,
-        rol: user.rol,
-        storeId: user.storeId,
-      },
+      user: buildAuthResponse(user, store),
     });
 }
 
