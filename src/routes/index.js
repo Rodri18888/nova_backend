@@ -14,6 +14,7 @@ import backup from './backup.js'
 import exporter from './export.js'
 import { categoriesRouter } from './categories.js'
 import { suppliersRouter } from './suppliers.js'
+import payments from './payments.js'
 
 const router = Router()
 
@@ -32,5 +33,6 @@ router.use('/dashboard', dashboard)
 router.use('/store', store)
 router.use('/backup', backup)
 router.use('/export', exporter)
+router.use('/payments', payments)
 
 export default router
