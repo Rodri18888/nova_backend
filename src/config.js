@@ -17,3 +17,4 @@ export const RESET_TOKEN_EXPIRES_MINUTES = 60
 export const STORE_CONFIG_FIELDS = ['name', 'rnc', 'phone', 'address', 'taxRate', 'slogan']
 export const DEFAULT_STORE_CONFIG = { name: 'MODAPOS', rnc: '', phone: '', address: '', taxRate: 19, slogan: '' }
 export const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY || ''
+export const STRIPE_WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET || ''

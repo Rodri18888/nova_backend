@@ -102,6 +102,8 @@ model Sale {
   createdAt       DateTime     @default(now())
   storeId         String
   store           Store @relation(fields: [storeId], references: [id])
+  stripePaymentIntentId String?  @unique
+  stripeRefundId        String?
 
   @@unique([storeId, invoice])
 }

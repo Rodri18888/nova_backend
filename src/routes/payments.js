@@ -7,5 +7,6 @@ const router = Router()
 
 router.post('/intent', authenticateToken, asyncHandler(payments.createPaymentIntent))
 router.post('/verify', authenticateToken, asyncHandler(payments.verifyPaymentIntent))
+router.post('/webhook', asyncHandler(payments.handleWebhook))
 
 export default router

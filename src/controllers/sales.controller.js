@@ -21,7 +21,7 @@ export async function getSale(req, res) {
 }
 
 export async function createSale(req, res) {
-  const { customerId, paymentMethod, items, discount } = req.body;
+  const { customerId, paymentMethod, items, discount, paymentIntentId } = req.body;
   if (paymentMethod === "Tarjeta") {
     const { paymentIntentId } = req.body;
     if (!paymentIntentId)
@@ -68,6 +68,8 @@ export async function createSale(req, res) {
         customerId: customerId || null,
         userId: req.user.id,
         paymentMethod,
+        status: "activa",
+        ...(paymentMethod === "Tarjeta" && paymentIntentId ? { stripePaymentIntentId: paymentIntentId } : {}),
         subtotal: calcSubtotal,
         tax: calcTax,
         total: calcTotal,
