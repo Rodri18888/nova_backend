@@ -1,4 +1,5 @@
 import Stripe from 'stripe'
+import { prisma } from '../prisma.js'
 import { STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET } from '../config.js'
 
 const stripe = new Stripe(STRIPE_SECRET_KEY)
@@ -40,4 +41,31 @@ export async function handleWebhook(req, res) {
       break
   }
   res.json({ received: true })
+}
+
+export async function refundPayment(req, res) {
+  const { saleId } = req.body
+  if (!saleId) return res.status(400).json({ error: 'saleId requerido' })
+
+  const sale = await prisma.sale.findUnique({ where: { id: saleId } })
+  if (!sale) return res.status(404).json({ error: 'Venta no encontrada' })
+  if (sale.storeId !== req.user.storeId)
+    return res.status(403).json({ error: 'Venta no pertenece a esta tienda' })
+  if (!sale.stripePaymentIntentId)
+    return res.status(400).json({ error: 'Venta sin pago Stripe' })
+  if (sale.status === 'anulada')
+    return res.status(400).json({ error: 'Venta ya anulada' })
+  if (sale.stripeRefundId)
+    return res.status(400).json({ error: 'Venta ya reembolsada' })
+
+  const refund = await stripe.refunds.create({
+    payment_intent: sale.stripePaymentIntentId,
+  })
+
+  await prisma.sale.update({
+    where: { id: saleId },
+    data: { status: 'anulada', stripeRefundId: refund.id, motivoAnulacion: 'Reembolso Stripe' },
+  })
+
+  res.json({ ok: true, refundId: refund.id })
 }
