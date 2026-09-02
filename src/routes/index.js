@@ -12,7 +12,6 @@ import dashboard from './dashboard.js'
 import store from './store.js'
 import backup from './backup.js'
 import exporter from './export.js'
-import { categoriesRouter } from './categories.js'
 import { suppliersRouter } from './suppliers.js'
 import payments from './payments.js'
 
@@ -20,7 +19,6 @@ const router = Router()
 
 router.use('/auth', auth)
 router.use('/users', users)
-router.use('/categories', categoriesRouter)
 router.use('/products', products)
 router.use('/customers', customers)
 router.use('/sales', sales)

@@ -50,43 +50,25 @@ async function main() {
 
   console.log('Usuarios creados:', admin.username, vendedor.username)
 
-  // 3. Categorías
-  const categories = [
-    'Pantalones', 'Camisas', 'Chaquetas', 'Vestidos', 'Faldas', 'Sudaderas', 'Accesorios', 'Shorts'
-  ]
-
-  const catMap = {}
-  for (const name of categories) {
-    const cat = await prisma.category.upsert({
-      where: { name },
-      update: {},
-      create: { 
-        name,
-        storeId: defaultStore.id,
-      },
-    })
-    catMap[name] = cat.id
-  }
-
-  // 4. Productos
+  // 3. Productos
   const products = [
-    { name: 'Jeans Clásicos', sku: 'JEAN-001', price: 89900, cost: 42000, stock: 45, size: 'M', color: 'Azul', cat: 'Pantalones' },
-    { name: 'Jeans Skinny', sku: 'JEAN-002', price: 95000, cost: 45000, stock: 30, size: 'S', color: 'Negro', cat: 'Pantalones' },
-    { name: 'Pantalón Cargo', sku: 'PANT-001', price: 75000, cost: 35000, stock: 3, size: 'M', color: 'Verde', cat: 'Pantalones' },
-    { name: 'Camiseta Básica', sku: 'CAMI-001', price: 35000, cost: 15000, stock: 120, size: 'S', color: 'Blanco', cat: 'Camisas' },
-    { name: 'Camisa Formal', sku: 'CAMI-002', price: 120000, cost: 55000, stock: 25, size: 'L', color: 'Azul', cat: 'Camisas' },
-    { name: 'Blusa Seda', sku: 'BLUS-001', price: 78000, cost: 35000, stock: 18, size: 'S', color: 'Beige', cat: 'Camisas' },
-    { name: 'Chaqueta Denim', sku: 'CHAQ-001', price: 185000, cost: 90000, stock: 8, size: 'L', color: 'Azul', cat: 'Chaquetas' },
-    { name: 'Chaqueta Cuero', sku: 'CHAQ-002', price: 350000, cost: 170000, stock: 12, size: 'M', color: 'Negro', cat: 'Chaquetas' },
-    { name: 'Vestido Floral', sku: 'VEST-001', price: 95000, cost: 45000, stock: 28, size: 'M', color: 'Rosa', cat: 'Vestidos' },
-    { name: 'Vestido Noche', sku: 'VEST-002', price: 250000, cost: 120000, stock: 10, size: 'S', color: 'Negro', cat: 'Vestidos' },
-    { name: 'Falda Plisada', sku: 'FALD-001', price: 65000, cost: 30000, stock: 5, size: 'S', color: 'Negro', cat: 'Faldas' },
-    { name: 'Sudadera Hoodie', sku: 'SUDA-001', price: 120000, cost: 55000, stock: 42, size: 'L', color: 'Gris', cat: 'Sudaderas' },
-    { name: 'Sudadera Crop', sku: 'SUDA-002', price: 95000, cost: 45000, stock: 35, size: 'S', color: 'Rosa', cat: 'Sudaderas' },
-    { name: 'Cinturón Cuero', sku: 'CINT-001', price: 55000, cost: 25000, stock: 50, size: 'Única', color: 'Marrón', cat: 'Accesorios' },
-    { name: 'Gafas Sol', sku: 'GAFAS-001', price: 75000, cost: 35000, stock: 20, size: 'Única', color: 'Negro', cat: 'Accesorios' },
-    { name: 'Shorts Deportivos', sku: 'SHRT-001', price: 55000, cost: 25000, stock: 30, size: 'M', color: 'Negro', cat: 'Shorts' },
-    { name: 'Shorts Mezclilla', sku: 'SHRT-002', price: 68000, cost: 32000, stock: 22, size: 'S', color: 'Azul', cat: 'Shorts' },
+    { name: 'Jeans Clásicos', sku: 'JEAN-001', price: 89900, cost: 42000, stock: 45, size: ['M'], color: ['Azul'], material: ['Algodón', 'Mezclilla'], type: 'Ropa' },
+    { name: 'Jeans Skinny', sku: 'JEAN-002', price: 95000, cost: 45000, stock: 30, size: ['S'], color: ['Negro'], material: ['Algodón', 'Mezclilla'], type: 'Ropa' },
+    { name: 'Pantalón Cargo', sku: 'PANT-001', price: 75000, cost: 35000, stock: 3, size: ['M'], color: ['Verde'], material: ['Algodón', 'Poliéster'], type: 'Ropa' },
+    { name: 'Camiseta Básica', sku: 'CAMI-001', price: 35000, cost: 15000, stock: 120, size: ['S'], color: ['Blanco'], material: ['Algodón'], type: 'Ropa' },
+    { name: 'Camisa Formal', sku: 'CAMI-002', price: 120000, cost: 55000, stock: 25, size: ['L'], color: ['Azul'], material: ['Algodón'], type: 'Ropa' },
+    { name: 'Blusa Seda', sku: 'BLUS-001', price: 78000, cost: 35000, stock: 18, size: ['S'], color: ['Beige'], material: ['Seda'], type: 'Ropa' },
+    { name: 'Chaqueta Denim', sku: 'CHAQ-001', price: 185000, cost: 90000, stock: 8, size: ['L'], color: ['Azul'], material: ['Mezclilla'], type: 'Ropa' },
+    { name: 'Chaqueta Cuero', sku: 'CHAQ-002', price: 350000, cost: 170000, stock: 12, size: ['M'], color: ['Negro'], material: ['Cuero'], type: 'Ropa' },
+    { name: 'Vestido Floral', sku: 'VEST-001', price: 95000, cost: 45000, stock: 28, size: ['M'], color: ['Rosa'], material: ['Algodón'], type: 'Ropa' },
+    { name: 'Vestido Noche', sku: 'VEST-002', price: 250000, cost: 120000, stock: 10, size: ['S'], color: ['Negro'], material: ['Satén'], type: 'Ropa' },
+    { name: 'Falda Plisada', sku: 'FALD-001', price: 65000, cost: 30000, stock: 5, size: ['S'], color: ['Negro'], material: ['Poliéster'], type: 'Ropa' },
+    { name: 'Sudadera Hoodie', sku: 'SUDA-001', price: 120000, cost: 55000, stock: 42, size: ['L'], color: ['Gris'], material: ['Algodón'], type: 'Ropa' },
+    { name: 'Sudadera Crop', sku: 'SUDA-002', price: 95000, cost: 45000, stock: 35, size: ['S'], color: ['Rosa'], material: ['Algodón'], type: 'Ropa' },
+    { name: 'Cinturón Cuero', sku: 'CINT-001', price: 55000, cost: 25000, stock: 50, size: ['Única'], color: ['Marrón'], material: ['Cuero'], type: 'Accesorio' },
+    { name: 'Gafas Sol', sku: 'GAFAS-001', price: 75000, cost: 35000, stock: 20, size: ['Única'], color: ['Negro'], material: ['Plástico'], type: 'Accesorio' },
+    { name: 'Shorts Deportivos', sku: 'SHRT-001', price: 55000, cost: 25000, stock: 30, size: ['M'], color: ['Negro'], material: ['Poliéster'], type: 'Ropa' },
+    { name: 'Shorts Mezclilla', sku: 'SHRT-002', price: 68000, cost: 32000, stock: 22, size: ['S'], color: ['Azul'], material: ['Mezclilla'], type: 'Ropa' },
   ]
 
   for (const p of products) {
@@ -101,7 +83,8 @@ async function main() {
         stock: p.stock,
         size: p.size,
         color: p.color,
-        categoryId: catMap[p.cat],
+        material: p.material,
+        type: p.type,
         storeId: defaultStore.id,
       },
     })
