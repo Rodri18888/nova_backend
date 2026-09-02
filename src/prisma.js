@@ -8,7 +8,7 @@ export function runWithStore(storeId, fn) {
 }
 
 const TENANT_MODELS = new Set([
-  'User', 'Category', 'Product', 'Customer', 'Sale', 'SaleItem',
+  'User', 'Product', 'Customer', 'Sale', 'SaleItem',
   'Devolution', 'DevolutionItem', 'Supplier', 'Purchase', 'PurchaseItem',
   'CashRegister', 'CashMovement', 'InventoryMovement',
 ])

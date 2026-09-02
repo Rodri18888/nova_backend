@@ -14,9 +14,9 @@ export async function exportSales(req, res) {
 }
 
 export async function exportProducts(req, res) {
-  const products = await prisma.product.findMany({ include: { category: true } })
-  const csv = ['Nombre,SKU,Código Barras,Categoría,Precio,Costo,Stock,Talla,Color,Descripción']
-  products.forEach(p => csv.push([p.name, p.sku, p.barcode || '', p.category?.name || '', p.price, p.cost, p.stock, p.size || '', p.color || '', p.description || ''].map(sanitizeCsvField).join(',')))
+  const products = await prisma.product.findMany()
+  const csv = ['Nombre,SKU,Código Barras,Precio,Costo,Stock,Talla,Color,Material,Tipo,Descripción']
+  products.forEach(p => csv.push([p.name, p.sku, p.barcode || '', p.price, p.cost, p.stock, (p.size || []).join(' / '), (p.color || []).join(' / '), (p.material || []).join(' / '), p.type || '', p.description || ''].map(sanitizeCsvField).join(',')))
   res.setHeader('Content-Type', 'text/csv')
   res.setHeader('Content-Disposition', 'attachment; filename=productos.csv')
   res.send(csv.join('\n'))

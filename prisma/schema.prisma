@@ -28,17 +28,6 @@ model User {
 
 }
 
-model Category {
-  id        String    @id @default(cuid())
-  name      String
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  products  Product[]
-  storeId   String
-  store     Store @relation(fields: [storeId], references: [id])
-
-  @@unique([storeId, name])
-}
 
 model Product {
   id                 String              @id @default(cuid())
@@ -50,11 +39,11 @@ model Product {
   cost               Decimal             @db.Decimal(12, 2)
   stock              Int                 @default(0)
   minStock           Int                 @default(5)
-  size               String?
-  color              String?
+  size               String[]
+  color              String[]
+  material           String[]
+  type               String?
   image              String?
-  categoryId         String
-  category           Category            @relation(fields: [categoryId], references: [id])
   createdAt          DateTime            @default(now())
   updatedAt          DateTime            @updatedAt
   saleItems          SaleItem[]
@@ -244,7 +233,6 @@ model Store {
   code               String @unique
   name               String
   users              User[]
-  categories         Category[]
   products           Product[]
   customers          Customer[]
   sales              Sale[]
