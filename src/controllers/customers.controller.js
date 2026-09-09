@@ -8,7 +8,7 @@ export async function listCustomers(req, res) {
   })
   res.json(customers.map(c => ({
     id: c.id, name: c.name, email: c.email, phone: c.phone, address: c.address, points: c.points,
-    purchases: c.sales.length, totalSpent: c.sales.reduce((sum, s) => sum + s.total, 0),
+    purchases: c.sales.length, totalSpent: c.sales.reduce((sum, s) => sum + Number(s.total), 0),
     lastPurchase: c.sales[0]?.createdAt?.toISOString() || c.createdAt.toISOString(),
     createdAt: c.createdAt.toISOString(),
   })))

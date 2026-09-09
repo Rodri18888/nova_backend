@@ -73,7 +73,7 @@ async function main() {
 
   for (const p of products) {
     await prisma.product.upsert({
-      where: { sku: p.sku },
+      where: { storeId_sku: { storeId: defaultStore.id, sku: p.sku } },
       update: {},
       create: {
         name: p.name,
@@ -104,7 +104,7 @@ async function main() {
   const customerRecords = []
   for (const c of customers) {
     const record = await prisma.customer.upsert({
-      where: { email: c.email },
+      where: { storeId_email: { storeId: defaultStore.id, email: c.email } },
       update: {},
       create: {
         ...c,
