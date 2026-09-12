@@ -1,10 +1,6 @@
 import { prisma } from '../prisma.js'
 import { sanitizeString } from '../lib/route-helpers.js'
 import { getNextInvoice } from '../utils/sequence.js'
-import Stripe from 'stripe'
-import { STRIPE_SECRET_KEY } from '../config.js'
-
-const stripe = new Stripe(STRIPE_SECRET_KEY)
 
 export async function listSales(req, res) {
   res.json(await prisma.sale.findMany({
@@ -21,21 +17,7 @@ export async function getSale(req, res) {
 }
 
 export async function createSale(req, res) {
-  const { customerId, paymentMethod, items, discount, paymentIntentId } = req.body;
-  if (paymentMethod === "Tarjeta") {
-    const { paymentIntentId } = req.body;
-    if (!paymentIntentId)
-      return res
-        .status(400)
-        .json({ error: "PaymentIntent requerido para tarjeta" });
-    const intent = await stripe.paymentIntents.retrieve(paymentIntentId);
-    if (intent.status !== "succeeded")
-      return res.status(402).json({ error: "El pago no fue completado" });
-    if (intent.metadata.storeId !== req.user.storeId)
-      return res
-        .status(403)
-        .json({ error: "PaymentIntent no pertenece a esta tienda" });
-  }
+  const { customerId, paymentMethod, items, discount } = req.body;
   if (!items?.length)
     return res.status(400).json({ error: "Debe incluir al menos un producto" });
   if (!["Efectivo", "Tarjeta", "Transferencia"].includes(paymentMethod))
@@ -69,7 +51,6 @@ export async function createSale(req, res) {
         userId: req.user.id,
         paymentMethod,
         status: "activa",
-        ...(paymentMethod === "Tarjeta" && paymentIntentId ? { stripePaymentIntentId: paymentIntentId } : {}),
         subtotal: calcSubtotal,
         tax: calcTax,
         total: calcTotal,
