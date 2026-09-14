@@ -10,6 +10,7 @@ import {
   GOOGLE_CLIENT_ID,
 } from "../config.js";
 import { sendResetPasswordEmail } from "../utils/mailer.js";
+import logger from "../utils/logger.js";
 
 export async function login(req, res) {
   const { username, password } = req.body;
@@ -242,7 +243,7 @@ export async function googleLogin(req, res) {
     });
     res.json({ user: buildAuthResponse(user, user.store) });
   } catch (err) {
-    console.error("Error en googleLogin:", err.message || err);
+    logger.error("Error en googleLogin:", err.message || err);
     return res.status(400).json({ error: "Credencial de Google inválida" });
   }
 }
@@ -286,7 +287,7 @@ export async function forgotPassword(req, res) {
     await sendResetPasswordEmail(user.email, user.nombre, resetLink);
     res.json(genericMessage);
   } catch (err) {
-    console.error("Error en forgotPassword:", err);
+    logger.error("Error en forgotPassword:", err);
     res.status(500).json({ error: "No se pudo procesar la solicitud" });
   }
 }
@@ -325,7 +326,7 @@ export async function resetPassword(req, res) {
     });
     res.json({ message: "Contraseña actualizada correctamente" });
   } catch (err) {
-    console.error("Error en resetPassword:", err);
+    logger.error("Error en resetPassword:", err);
     res.status(500).json({ error: "No se pudo restablecer la contraseña" });
   }
 }
