@@ -1,11 +1,13 @@
 import bcrypt from "bcryptjs";
 import crypto from "crypto";
 import jwt from "jsonwebtoken";
+import { OAuth2Client } from "google-auth-library";
 import { prisma } from "../prisma.js";
 import {
   JWT_SECRET,
   FRONTEND_URL,
   RESET_TOKEN_EXPIRES_MINUTES,
+  GOOGLE_CLIENT_ID,
 } from "../config.js";
 import { sendResetPasswordEmail } from "../utils/mailer.js";
 
@@ -202,6 +204,48 @@ export async function register(req, res) {
 
 const hashToken = (token) =>
   crypto.createHash("sha256").update(token).digest("hex");
+
+export async function googleLogin(req, res) {
+  const { credential } = req.body;
+  if (!credential)
+    return res.status(400).json({ error: "Credencial de Google requerida" });
+  if (!GOOGLE_CLIENT_ID)
+    return res
+      .status(503)
+      .json({ error: "Login con Google no configurado" });
+  try {
+    const client = new OAuth2Client(GOOGLE_CLIENT_ID);
+    const ticket = await client.verifyIdToken({
+      idToken: String(credential),
+      audience: GOOGLE_CLIENT_ID,
+    });
+    const payload = ticket.getPayload();
+    if (!payload || payload.email_verified !== true)
+      return res
+        .status(400)
+        .json({ error: "El correo de Google no está verificado" });
+    const email = String(payload.email).trim().toLowerCase();
+    const user = await prisma.user.findUnique({
+      where: { email },
+      include: { store: true },
+    });
+    if (!user || !user.activo)
+      return res.status(400).json({
+        error: "No existe una cuenta con ese correo. Regístrate primero",
+      });
+    const token = signToken(user);
+    res.cookie("token", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+      maxAge: 8 * 60 * 60 * 1000,
+    });
+    res.json({ user: buildAuthResponse(user, user.store) });
+  } catch (err) {
+    console.error("Error en googleLogin:", err.message || err);
+    return res.status(400).json({ error: "Credencial de Google inválida" });
+  }
+}
 
 export function logout(req, res) {
   res.clearCookie("token", {

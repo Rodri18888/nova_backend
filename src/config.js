@@ -1,5 +1,6 @@
 export const JWT_SECRET = process.env.JWT_SECRET
 export const PORT = process.env.PORT || 3001
+export const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || ''
 export const ALLOWED_ORIGINS = (process.env.CORS_ORIGINS || 'http://localhost:5173,http://localhost:5174,http://localhost:3000').split(',')
 export const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5173'
 
