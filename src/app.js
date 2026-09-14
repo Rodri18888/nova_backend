@@ -1,5 +1,6 @@
 import express from 'express'
 import cors from 'cors'
+import cookieParser from 'cookie-parser'
 import { ALLOWED_ORIGINS } from './config.js'
 import { apiLimiter } from './middleware/rate-limit.js'
 import { securityHeaders } from './middleware/security-headers.js'
@@ -17,6 +18,7 @@ export function createApp() {
     credentials: true,
   }))
   app.use(express.json({ limit: '1mb' }))
+  app.use(cookieParser())
   app.use(securityHeaders)
   app.use('/api/', apiLimiter)
   app.use('/api', routes)

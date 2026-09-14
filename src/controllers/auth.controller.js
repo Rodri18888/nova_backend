@@ -38,8 +38,13 @@ export async function login(req, res) {
     JWT_SECRET,
     { algorithm: "HS256", expiresIn: "8h" },
   );
+  res.cookie("token", token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "strict",
+    maxAge: 8 * 60 * 60 * 1000,
+  });
   res.json({
-    token,
     user: {
       id: user.id,
       username: user.username,
@@ -146,8 +151,13 @@ export async function register(req, res) {
     });
     store = result.newStore;
     const token = signToken(result.owner);
+    res.cookie("token", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+      maxAge: 8 * 60 * 60 * 1000,
+    });
     return res.status(201).json({
-      token,
       user: buildAuthResponse(result.owner, store),
     });
   }
@@ -177,16 +187,30 @@ export async function register(req, res) {
     },
   });
   const token = signToken(user);
+  res.cookie("token", token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "strict",
+    maxAge: 8 * 60 * 60 * 1000,
+  });
   res
     .status(201)
     .json({
-      token,
       user: buildAuthResponse(user, store),
     });
 }
 
 const hashToken = (token) =>
   crypto.createHash("sha256").update(token).digest("hex");
+
+export function logout(req, res) {
+  res.clearCookie("token", {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "strict",
+  });
+  res.json({ ok: true });
+}
 
 export async function forgotPassword(req, res) {
   const { email } = req.body;
