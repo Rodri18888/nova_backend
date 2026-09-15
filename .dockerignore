@@ -1,0 +1,11 @@
+node_modules
+npm-debug.log
+logs
+backups
+.env
+.env.local
+store-config.json
+prisma/dev.db
+.git
+Dockerfile
+.dockerignore
