@@ -10,6 +10,7 @@ import {
   GOOGLE_CLIENT_ID,
 } from "../config.js";
 import { sendResetPasswordEmail } from "../utils/mailer.js";
+import { cookieOptions, clearCookieOptions } from "../utils/cookie.js";
 import logger from "../utils/logger.js";
 
 export async function login(req, res) {
