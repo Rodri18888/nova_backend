@@ -41,12 +41,7 @@ export async function login(req, res) {
     JWT_SECRET,
     { algorithm: "HS256", expiresIn: "8h" },
   );
-  res.cookie("token", token, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "strict",
-    maxAge: 8 * 60 * 60 * 1000,
-  });
+  res.cookie("token", token, cookieOptions(req));
   res.json({
     user: {
       id: user.id,
@@ -154,12 +149,7 @@ export async function register(req, res) {
     });
     store = result.newStore;
     const token = signToken(result.owner);
-    res.cookie("token", token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
-      maxAge: 8 * 60 * 60 * 1000,
-    });
+    res.cookie("token", token, cookieOptions(req));
     return res.status(201).json({
       user: buildAuthResponse(result.owner, store),
     });
@@ -190,12 +180,7 @@ export async function register(req, res) {
     },
   });
   const token = signToken(user);
-  res.cookie("token", token, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "strict",
-    maxAge: 8 * 60 * 60 * 1000,
-  });
+  res.cookie("token", token, cookieOptions(req));
   res
     .status(201)
     .json({
@@ -235,12 +220,7 @@ export async function googleLogin(req, res) {
         error: "No existe una cuenta con ese correo. Regístrate primero",
       });
     const token = signToken(user);
-    res.cookie("token", token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
-      maxAge: 8 * 60 * 60 * 1000,
-    });
+    res.cookie("token", token, cookieOptions(req));
     res.json({ user: buildAuthResponse(user, user.store) });
   } catch (err) {
     logger.error("Error en googleLogin:", err.message || err);
@@ -249,11 +229,7 @@ export async function googleLogin(req, res) {
 }
 
 export function logout(req, res) {
-  res.clearCookie("token", {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "strict",
-  });
+  res.clearCookie("token", clearCookieOptions(req));
   res.json({ ok: true });
 }
 
