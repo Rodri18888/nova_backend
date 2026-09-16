@@ -3,10 +3,47 @@ import { sanitizeString } from '../lib/route-helpers.js'
 import { getNextInvoice } from '../utils/sequence.js'
 
 export async function listSales(req, res) {
-  res.json(await prisma.sale.findMany({
-    include: { customer: true, user: true, items: { include: { product: true } } },
-    orderBy: { createdAt: 'desc' },
-  }))
+  const page = Math.max(1, parseInt(req.query.page) || 1)
+  const limit = Math.min(100, Math.max(1, parseInt(req.query.limit) || 25))
+  const search = sanitizeString(req.query.search)?.trim()
+  const where = {}
+
+  if (search) {
+    where.OR = [
+      { invoice: { contains: search, mode: 'insensitive' } },
+      { customer: { name: { contains: search, mode: 'insensitive' } } },
+    ]
+  }
+
+  const from = req.query.from && !isNaN(new Date(req.query.from).getTime()) ? new Date(req.query.from + 'T00:00:00') : null
+  const to = req.query.to && !isNaN(new Date(req.query.to).getTime()) ? new Date(req.query.to + 'T23:59:59') : null
+  if (from || to) {
+    where.createdAt = {}
+    if (from) where.createdAt.gte = from
+    if (to) where.createdAt.lte = to
+  }
+
+  const [sales, total, activas] = await prisma.$transaction([
+    prisma.sale.findMany({
+      where,
+      include: { customer: true, user: true, items: { include: { product: true } } },
+      orderBy: { createdAt: 'desc' },
+      skip: (page - 1) * limit,
+      take: limit,
+    }),
+    prisma.sale.count({ where }),
+    prisma.sale.aggregate({ where: { ...where, status: 'activa' }, _sum: { total: true }, _count: true }),
+  ])
+
+  res.json({
+    sales,
+    total,
+    page,
+    limit,
+    totalMonto: Number(activas._sum.total ?? 0),
+    totalActivas: activas._count,
+    totalAnuladas: total - activas._count,
+  })
 }
 
 export async function getSale(req, res) {

@@ -5,10 +5,10 @@ const { randomUUID } = require('crypto')
 const prisma = new PrismaClient()
 
 const TAX_RATE = 0.19
-const DAYS = 1095
 const SALE_CHUNK = 500
-
 const now = new Date()
+const PERIOD_START = new Date(2026, 0, 1)
+const periodDays = Math.max(0, Math.floor((now.getTime() - PERIOD_START.getTime()) / 86400000))
 
 const storesConfig = [
   {
@@ -19,7 +19,7 @@ const storesConfig = [
       { username: 'vendedor', email: 'vendedor@tienda.com', nombre: 'Juan Vendedor' },
       { username: 'ropa_lucia', email: 'lucia@modanova.com', nombre: 'Lucía Martínez' },
     ],
-    daily: { min: 1, max: 4, weekendExtra: 2 },
+    daily: { min: 0, max: 3, weekendExtra: 2 },
     customers: [
       'María García', 'Juan Pérez', 'Ana López', 'Carlos Rodríguez', 'Laura Martínez',
       'Pedro Fernández', 'Sofía Torres', 'Diego Ramírez', 'Valentina Castro', 'Andrés Gómez',
@@ -60,7 +60,7 @@ const storesConfig = [
       { username: 'dep_andres', email: 'andres@deportesnova.com', nombre: 'Andrés Peña' },
       { username: 'dep_marta', email: 'marta@deportesnova.com', nombre: 'Marta Gil' },
     ],
-    daily: { min: 1, max: 3, weekendExtra: 2 },
+    daily: { min: 0, max: 2, weekendExtra: 1 },
     customers: [
       'Luis Herrera', 'Carmen Díaz', 'Roberto Salas', 'Elena Ríos', 'Pablo Quintana',
       'Natalia Bravo', 'Oscar Cárdenas', 'Julia Pino', 'Héctor Navas', 'Silvia Arenas',
@@ -101,7 +101,7 @@ const storesConfig = [
       { username: 'sup_carmen', email: 'carmen@supermercadonova.com', nombre: 'Carmen Rosa' },
       { username: 'sup_jose', email: 'jose@supermercadonova.com', nombre: 'José Payano' },
     ],
-    daily: { min: 2, max: 5, weekendExtra: 3 },
+    daily: { min: 1, max: 4, weekendExtra: 2 },
     customers: [
       'Rosa Linares', 'Manuel Santana', 'Julieta Núñez', 'Gregorio Mejía', 'Ivonne Castro',
       'Samuel Valdez', 'Teresa Guzmán', 'Efraín Lara', 'Xiomara Felix', 'Ambiorix Batista',
@@ -142,7 +142,7 @@ const storesConfig = [
       { username: 'tec_javier', email: 'javier@tecnologianova.com', nombre: 'Javier Mena' },
       { username: 'tec_diana', email: 'diana@tecnologianova.com', nombre: 'Diana Rivas' },
     ],
-    daily: { min: 1, max: 3, weekendExtra: 1 },
+    daily: { min: 0, max: 2, weekendExtra: 1 },
     customers: [
       'Adrián Peña', 'Miriam Cuevas', 'Ernesto Bautista', 'Claudia Payano', 'Simón Reyes',
       'Alicia Mota', 'Darío Núñez', 'Gabriela Figueroa', 'Óscar Villar', 'Ruth Caba',
@@ -238,7 +238,7 @@ async function seedStore(config) {
   await prisma.inventoryMovement.createMany({
     data: products.map((p) => ({
       productId: p.id, storeId: store.id, type: 'entrada', quantity: p.stock,
-      reason: 'Inventario inicial', createdAt: new Date(now.getTime() - DAYS * 86400000),
+      reason: 'Inventario inicial', createdAt: PERIOD_START,
     })),
   })
 
@@ -266,13 +266,14 @@ async function seedStore(config) {
   let invoiceSeq = 1
   let anuladas = 0
 
-  for (let d = DAYS; d >= 0; d--) {
+  for (let d = periodDays; d >= 0; d--) {
     const date = new Date(now.getTime() - d * 86400000)
     const weekday = date.getDay()
 
     let count = randInt(config.daily.min, config.daily.max)
     if (weekday === 0 || weekday === 6) count += config.daily.weekendExtra
-    if (date.getMonth() === 11) count = Math.round(count * 1.6)
+    const growth = 0.55 + (date.getMonth() / 9) * 0.7
+    count = Math.round(count * growth)
     if (date.getMonth() === 0 && date.getDate() <= 5) count = Math.round(count * 1.3)
     if (Math.random() < 0.08 && config.daily.max <= 3) count = 0
 
@@ -374,8 +375,8 @@ async function seedStore(config) {
   const purchases = []
   const purchaseItems = []
   let purchaseSeq = 1
-  for (let pz = 0; pz < randInt(14, 20); pz++) {
-    const pDate = new Date(now.getTime() - randInt(0, DAYS) * 86400000)
+  for (let pz = 0; pz < randInt(8, 12); pz++) {
+    const pDate = new Date(now.getTime() - randInt(0, periodDays) * 86400000)
     const supplier = pick(suppliers)
     const nItems = randInt(2, 4)
     const used = []
@@ -428,7 +429,7 @@ async function seedStore(config) {
 }
 
 async function main() {
-  console.log('Sembrando 4 tiendas con 3 años de histórico en Neon...')
+  console.log('Sembrando 4 tiendas con ventas de enero a septiembre 2026 en Neon...')
   const start = Date.now()
 
   for (const config of storesConfig) {
