@@ -4,13 +4,13 @@ export const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || ''
 export const ALLOWED_ORIGINS = (process.env.CORS_ORIGINS || 'http://localhost:5173,http://localhost:5174,http://localhost:3000').split(',')
 export const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5173'
 
-export const SMTP_CONFIG = {
-  host: process.env.SMTP_HOST || '',
-  port: Number(process.env.SMTP_PORT || 587),
-  secure: process.env.SMTP_SECURE === 'true',
-  user: process.env.SMTP_USER || '',
-  pass: process.env.SMTP_PASS || '',
+export const EMAILJS_CONFIG = {
+  serviceId: process.env.EMAILJS_SERVICE_ID || '',
+  templateId: process.env.EMAILJS_TEMPLATE_ID || '',
+  publicKey: process.env.EMAILJS_PUBLIC_KEY || '',
+  privateKey: process.env.EMAILJS_PRIVATE_KEY || '',
 }
+
 export const MAIL_FROM = process.env.MAIL_FROM || 'NOVA <no-reply@nova.com>'
 
 export const RESET_TOKEN_EXPIRES_MINUTES = 60
