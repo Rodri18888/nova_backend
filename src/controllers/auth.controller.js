@@ -256,7 +256,9 @@ export async function forgotPassword(req, res) {
         ),
       },
     });
-    const resetLink = `${FRONTEND_URL}/reset-password/${token}`;
+    const origin = req.get('origin') || FRONTEND_URL;
+    const cleanOrigin = origin.replace(/\/$/, '');
+    const resetLink = `${cleanOrigin}/reset-password/${token}`;
     try {
       await sendResetPasswordEmail(user.email, user.nombre, resetLink);
     } catch (mailError) {
