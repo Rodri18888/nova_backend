@@ -269,6 +269,42 @@ export async function forgotPassword(req, res) {
   }
 }
 
+export async function forgotPassword(req, res) {
+  const { email } = req.body;
+  if (!email) return res.status(400).json({ error: "El email es requerido" });
+  const genericMessage = {
+    message:
+      "Si el correo existe, te enviamos un enlace para restablecer tu contraseña",
+  };
+  try {
+    const user = await prisma.user.findUnique({
+      where: { email: String(email).toLowerCase().trim() },
+    });
+    if (!user || !user.activo) return res.json(genericMessage);
+    const token = crypto.randomBytes(32).toString("hex");
+    await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        resetPasswordToken: hashToken(token),
+        resetPasswordExpires: new Date(
+          Date.now() + RESET_TOKEN_EXPIRES_MINUTES * 60 * 1000,
+        ),
+      },
+    });
+    const resetLink = `${FRONTEND_URL}/reset-password/${token}`;
+    try {
+      await sendResetPasswordEmail(user.email, user.nombre, resetLink);
+    } catch (mailError) {
+      logger.error("Error al enviar correo en forgotPassword:", mailError.message || mailError);
+      return res.status(500).json({ error: "No se pudo enviar el correo de recuperación. Intenta más tarde" });
+    }
+    return res.json(genericMessage);
+  } catch (err) {
+    logger.error("Error en forgotPassword:", err);
+    return res.status(500).json({ error: "No se pudo procesar la solicitud" });
+  }
+}
+
 export async function resetPassword(req, res) {
   const { token, newPassword } = req.body;
   if (!token || !newPassword)
