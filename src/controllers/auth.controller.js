@@ -260,7 +260,7 @@ export async function forgotPassword(req, res) {
     try {
       await sendResetPasswordEmail(user.email, user.nombre, resetLink);
     } catch (mailError) {
-      logger.error("Error al enviar correo en forgotPassword:", mailError.message || mailError);
+      logger.error(`Error al enviar correo en forgotPassword: ${mailError.message || mailError}`);
       return res.status(500).json({ error: "No se pudo enviar el correo de recuperación. Intenta más tarde" });
     }
     return res.json(genericMessage);
