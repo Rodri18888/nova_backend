@@ -22,7 +22,9 @@ export async function sendResetPasswordEmail(to, nombre, resetLink) {
       accessToken: EMAILJS_CONFIG.privateKey,
       template_params: {
         to_name: nombre,
+        name: nombre,
         to_email: to,
+        email: to,
         reset_link: resetLink,
         expires_minutes: RESET_TOKEN_EXPIRES_MINUTES,
       },
