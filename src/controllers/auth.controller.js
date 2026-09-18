@@ -277,10 +277,9 @@ export async function resetPassword(req, res) {
     return res
       .status(400)
       .json({ error: "Token y nueva contraseña son requeridos" });
-  if (String(newPassword).length < 6)
-    return res
-      .status(400)
-      .json({ error: "La contraseña debe tener al menos 6 caracteres" });
+  var paswd=  /^(?=.*[0-9])(?=.*[!@#$%^&*])[a-zA-Z0-9!@#$%^&*]{7,15}$/;
+  if (!password.value.match(paswd))
+    return res.status(400).json({ error: "Contraseña poco segura"});
 
   try {
     const user = await prisma.user.findFirst({
