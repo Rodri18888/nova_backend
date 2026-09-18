@@ -90,9 +90,9 @@ export async function register(req, res) {
     return res
       .status(400)
       .json({ error: "Nombre, correo y contraseña son requeridos" });
-  var paswd=  /^(?=.*[0-9])(?=.*[!@#$%^&*])[a-zA-Z0-9!@#$%^&*]{7,15}$/;
-  if (!password.value.match(paswd))
-    return res.status(400).json({ error: "Contraseña poco segura"});
+  const paswd = /^(?=.*[0-9])(?=.*[!@#$%^&*])[a-zA-Z0-9!@#$%^&*]{7,15}$/;
+  if (!paswd.test(String(password)))
+    return res.status(400).json({ error: "La contraseña debe tener entre 7 y 15 caracteres, incluir al menos un número y un carácter especial (!@#$%^&*)" });
 
   const emailClean = String(email).toLowerCase().trim();
   const usernameClean = username ? String(username) : "";
