@@ -40,7 +40,7 @@ export async function closeRegister(req, res) {
   if (!current) return res.status(400).json({ error: 'No hay caja abierta' })
   const sales = await prisma.sale.aggregate({ where: { status: 'activa', createdAt: { gte: current.openDate } }, _sum: { total: true } })
   const returns = await prisma.devolution.aggregate({ where: { createdAt: { gte: current.openDate } }, _sum: { total: true } })
-  const expectedAmount = current.initialAmount + (sales._sum.total || 0) - (returns._sum.total || 0)
+  const expectedAmount = Number(current.initialAmount) + Number(sales._sum.total || 0) - Number(returns._sum.total || 0)
   if (expectedAmount < 0 || expectedAmount >= MAX_AMOUNT) return res.status(400).json({ error: 'El monto esperado excede el límite permitido' })
   res.json(await prisma.cashRegister.update({
     where: { id: current.id },
