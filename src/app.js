@@ -1,7 +1,7 @@
 import express from 'express'
 import cors from 'cors'
 import cookieParser from 'cookie-parser'
-import { ALLOWED_ORIGINS } from './config.js'
+import { isAllowedOrigin } from './config.js'
 import { apiLimiter } from './middleware/rate-limit.js'
 import { securityHeaders } from './middleware/security-headers.js'
 import { errorHandler } from './middleware/error-handler.js'
@@ -11,10 +11,7 @@ export function createApp() {
   const app = express()
 
   app.use(cors({
-    origin: (origin, cb) => {
-      if (!origin || ALLOWED_ORIGINS.includes(origin)) cb(null, true)
-      else cb(new Error('Origen no permitido'))
-    },
+    origin: (origin, cb) => isAllowedOrigin(origin) ? cb(null, true) : cb(new Error('Origen no permitido')),
     credentials: true,
   }))
   app.use(express.json({ limit: '1mb' }))
